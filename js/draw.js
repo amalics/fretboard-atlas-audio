@@ -68,9 +68,9 @@ export function fretboardSVG({ labels, maxFret = 15, dots = [], cells = false, m
  */
 export function chordBoxSVG({ frets, tuningMidi, rootPc, notes = [], title = '' }) {
   const n = frets.length;
-  const sg = 22, fg = 26, left = 28, top = 34;
+  const sg = 22, fg = 26, left = 40, top = 34;
   const { start, count } = boxWindow(frets);
-  const width = left + (n - 1) * sg + 26;
+  const width = left + (n - 1) * sg + 16;
   const height = top + count * fg + 34;
   const x = (s) => left + s * sg;
   const nameOf = (pc) => notes.find((nm) => parseNote(nm)?.pc === pc) || '';
@@ -81,7 +81,8 @@ export function chordBoxSVG({ frets, tuningMidi, rootPc, notes = [], title = '' 
     p.push(`<line class="${cls}" x1="${x(0)}" y1="${top + f * fg}" x2="${x(n - 1)}" y2="${top + f * fg}"/>`);
   }
   for (let s = 0; s < n; s++) p.push(`<line class="box-string" x1="${x(s)}" y1="${top}" x2="${x(s)}" y2="${top + count * fg}"/>`);
-  if (start > 1) p.push(`<text class="box-start" x="${x(n - 1) + 8}" y="${top + fg * 0.5 + 4}">${start}fr</text>`);
+  // the start fret sits left of the box, clear of the dots on the high strings
+  if (start > 1) p.push(`<text class="box-start" x="${x(0) - 13}" y="${top + fg * 0.5 + 4}" text-anchor="end">${start}fr</text>`);
   frets.forEach((f, s) => {
     const cx = x(s);
     if (f === null || f === undefined) {

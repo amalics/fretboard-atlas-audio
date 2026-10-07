@@ -49,9 +49,9 @@ function drawChapters() {
   const s = state();
   const chosen = s.chapters ? new Set(s.chapters.map(String)) : null;
   const items = chapterList().map((c) => `<label><input type="checkbox" value="${esc(c.chapter)}"${!chosen || chosen.has(String(c.chapter)) ? ' checked' : ''}>
-    ${/^\d+$/.test(String(c.chapter)) ? `Chapter ${esc(c.chapter)}` : `Appendix ${esc(c.chapter)}`}: ${esc(c.title)} <span class="muted">(${c.n})</span></label>`);
+    <span>${/^\d+$/.test(String(c.chapter)) ? `Chapter ${esc(c.chapter)}` : `Appendix ${esc(c.chapter)}`}: ${esc(c.title)} <span class="muted">(${c.n})</span></span></label>`);
   $('#fc-chapter-list', root).innerHTML = items.join('');
-  $('#fc-chapter-summary', root).textContent = chosen ? `${chosen.size} of ${chapterList().length} chapters` : 'All chapters';
+  $('#fc-chapter-summary', root).textContent = chosen ? `· ${chosen.size} of ${chapterList().length} chosen` : '· all chapters';
 }
 
 function onChapterChange() {
@@ -60,7 +60,7 @@ function onChapterChange() {
   const s = state();
   s.chapters = on.length === boxes.length ? null : on;
   save(s);
-  $('#fc-chapter-summary', root).textContent = s.chapters ? `${on.length} of ${boxes.length} chapters` : 'All chapters';
+  $('#fc-chapter-summary', root).textContent = s.chapters ? `· ${on.length} of ${boxes.length} chosen` : '· all chapters';
   startSession();
 }
 
@@ -85,10 +85,11 @@ function drawCounts() {
   const pool = selected();
   const c = counts(pool, s.records, dayString());
   $('#fc-due', root).textContent = pool.length
-    ? `${c.due} due today${c.fresh ? ` (${c.fresh} not seen yet)` : ''}, ${c.total} cards selected.`
-    : 'No chapters selected.';
-  $('#fc-boxes', root).innerHTML = c.boxes.map((n, i) => `<div class="fc-box"><span class="muted small">Box ${i + 1}</span>
-    <b>${n}</b><span class="small muted">${[1, 2, 4, 8, 16][i]} day${i ? 's' : ''}</span></div>`).join('');
+    ? `${c.due} due today${c.fresh ? ` (${c.fresh} not seen yet)` : ''}, ${c.total} cards in the chosen chapters.`
+    : '';
+  $('#fc-boxes', root).hidden = !pool.length;
+  $('#fc-boxes', root).innerHTML = c.boxes.map((n, i) => `<div class="fc-box"><span>Box ${i + 1}</span>
+    <b>${n}</b><span>${[1, 2, 4, 8, 16][i]} day${i ? 's' : ''}</span></div>`).join('');
 }
 
 function nextCard() {
@@ -98,15 +99,18 @@ function nextCard() {
   $('#fc-card', root).hidden = !has;
   $('#fc-empty', root).hidden = has;
   $('#fc-reveal', root).hidden = !has;
-  $('#fc-answer-buttons', root).hidden = true;
+  $('#fc-keys', root).hidden = !has;
+  $('#fc-knew', root).hidden = true;
+  $('#fc-missed', root).hidden = true;
   if (!has) {
-    $('#fc-empty-text', root).textContent = done
+    $('#fc-extra', root).hidden = !selected().length;
+    $('#fc-empty-text', root).textContent = !selected().length ? 'No chapters chosen. Open Chapters above and choose at least one.' : done
       ? `Session finished: ${done} card${done === 1 ? '' : 's'} reviewed. Nothing else is due today.`
       : 'Nothing is due today in the chosen chapters.';
     return;
   }
   const rec = state().records[current.id];
-  $('#fc-meta', root).textContent = `${/^\d+$/.test(String(current.chapter)) ? 'Chapter' : 'Appendix'} ${current.chapter} · ${current.chapter_title} · ${rec ? `box ${rec.box}` : 'new'} · ${queue.length} more in this session`;
+  $('#fc-meta', root).textContent = `${/^\d+$/.test(String(current.chapter)) ? 'Chapter' : 'Appendix'} ${current.chapter}: ${current.chapter_title} · ${rec ? `box ${rec.box}` : 'new card'} · ${queue.length} more in this session`;
   $('#fc-front', root).innerHTML = inlineMd(current.front);
   $('#fc-back', root).innerHTML = inlineMd(current.back);
   $('#fc-back', root).hidden = true;
@@ -118,7 +122,8 @@ function reveal() {
   revealed = true;
   $('#fc-back', root).hidden = false;
   $('#fc-reveal', root).hidden = true;
-  $('#fc-answer-buttons', root).hidden = false;
+  $('#fc-knew', root).hidden = false;
+  $('#fc-missed', root).hidden = false;
   $('#fc-knew', root).focus();
 }
 

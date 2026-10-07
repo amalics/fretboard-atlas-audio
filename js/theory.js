@@ -178,3 +178,20 @@ export function positions(tuningMidi, pcs, maxFret = 15) {
   });
   return out;
 }
+
+/** Drop repeated shapes (the same frets twice), keeping the first, so no two boxes look alike; standard shapes first. */
+export function uniqueVoicings(list) {
+  const seen = new Set();
+  const out = [];
+  for (const v of list) {
+    const key = JSON.stringify((v.frets || []).map((f) => (f === undefined ? null : f)));
+    if (seen.has(key)) {
+      const kept = out.find((o) => JSON.stringify(o.frets) === key);
+      if (v.standard && kept) kept.standard = true;
+      continue;
+    }
+    seen.add(key);
+    out.push({ ...v });
+  }
+  return [...out.filter((v) => v.standard), ...out.filter((v) => !v.standard)];
+}

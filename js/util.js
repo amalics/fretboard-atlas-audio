@@ -6,13 +6,13 @@ export { esc } from './draw.js';
 
 const cache = new Map();
 
-/** Fetch data/<name>.json once; resolves to null (and logs a warning) when the file is missing or broken. */
-export function loadData(name) {
+/** Fetch data/<name>.json once; resolves to null (and logs a warning unless optional) when the file is missing or broken. */
+export function loadData(name, { optional = false } = {}) {
   if (!cache.has(name)) {
     cache.set(name, fetch(`data/${name}.json`)
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
       .catch((e) => {
-        console.warn(`data/${name}.json could not be loaded (${e.message})`);
+        if (!optional) console.warn(`data/${name}.json could not be loaded (${e.message})`);
         return null;
       }));
   }

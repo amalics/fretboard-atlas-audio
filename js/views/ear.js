@@ -78,18 +78,19 @@ function drawOptions() {
   else if (kind === 'chord') items = theory.ear_qualities.map((q) => [q.quality, q.name]);
   else items = CHROMATIC.map((d) => [d, degreeText(d)]);
   const group = kind === 'interval' ? 'Intervals to practise' : kind === 'chord' ? 'Chord qualities to practise' : 'Degrees to practise';
-  let html = `<fieldset class="plain"><legend class="small muted">${group}</legend><div class="optgrid">`
-    + items.map(([v, l]) => `<label><input type="checkbox" value="${esc(v)}"${o.set.includes(v) ? ' checked' : ''}> ${esc(l)}</label>`).join('')
-    + '</div></fieldset><div class="optrow"><button type="button" class="linkbtn" data-all="1">Select all</button>'
-    + (kind === 'degree' ? '<button type="button" class="linkbtn" data-diatonic="1">Major scale only</button>' : '')
+  let html = `<fieldset class="plain"><legend class="opt-legend">${group}</legend><div class="optgrid">`
+    + items.map(([v, l]) => `<label><input type="checkbox" value="${esc(v)}"${o.set.includes(v) ? ' checked' : ''}>${esc(l)}</label>`).join('')
+    + '</div></fieldset><div class="optrow"><button type="button" class="btn link sm" data-all="1">Select all</button>'
+    + (kind === 'degree' ? '<button type="button" class="btn link sm" data-diatonic="1">Major scale only</button>' : '')
     + '</div>';
   if (kind === 'interval') {
-    html += '<div class="optrow"><span class="muted">Direction</span>'
-      + DIRECTIONS.map((d) => `<label><input type="radio" name="ear-dir" value="${d}"${o.direction === d ? ' checked' : ''}> ${DIR_LABEL[d]}</label>`).join('')
-      + '</div>';
+    html += '<fieldset class="plain"><legend class="opt-legend">Direction</legend><div class="optrow">'
+      + DIRECTIONS.map((d) => `<label><input type="radio" name="ear-dir" value="${d}"${o.direction === d ? ' checked' : ''}>${DIR_LABEL[d]}</label>`).join('')
+      + '</div></fieldset>';
   }
-  if (kind === 'degree') html += '<p class="small muted">Each question plays I, IV, V, I in a random major key, then one note. Name its degree in the key.</p>';
-  if (kind === 'chord') html += '<p class="small muted">Each chord is played one note at a time, then together.</p>';
+  if (kind === 'degree') html += '<p class="hint">Each question plays I, IV, V, I in a random major key, then one note. Name its degree in the key.</p>';
+  if (kind === 'chord') html += '<p class="hint">Each chord is played one note at a time, then together.</p>';
+  drawSettingsSummary();
   box.innerHTML = html;
   box.onchange = (e) => {
     if (e.target.name === 'ear-dir') o.direction = e.target.value;
@@ -105,6 +106,7 @@ function drawOptions() {
     saveOpts();
     question = null;
     drawAnswers();
+    drawSettingsSummary();
   };
   box.onclick = (e) => {
     if (e.target.dataset.all) o.set = items.map(([v]) => v);
@@ -117,6 +119,12 @@ function drawOptions() {
   };
 }
 
+function drawSettingsSummary() {
+  const o = opts[kind];
+  const noun = { interval: 'intervals', chord: 'chord qualities', degree: 'degrees' }[kind];
+  $('#ear-settings-sub', root).textContent = `· ${o.set.length} ${noun}${kind === 'interval' ? `, ${DIR_LABEL[o.direction].toLowerCase()}` : ''}`;
+}
+
 function label(v) {
   if (kind === 'interval') return intervalName(v);
   if (kind === 'chord') return qualityOf(v)?.name || v;
@@ -127,6 +135,7 @@ function drawAnswers() {
   const set = opts[kind].set;
   const ordered = kind === 'interval' ? INTERVAL_SET.filter((d) => set.includes(d))
     : kind === 'degree' ? CHROMATIC.filter((d) => set.includes(d)) : set;
+  $('#ear-answers', root).classList.add('idle');
   $('#ear-answers', root).innerHTML = ordered
     .map((v) => `<button type="button" class="btn" data-answer="${esc(v)}" disabled>${esc(label(v))}</button>`).join('');
 }
@@ -141,6 +150,7 @@ function next() {
   else if (kind === 'chord') question = chordQuestion(theory.ear_qualities.filter((q) => o.set.includes(q.quality)));
   else question = degreeQuestion(o.set, qualityOf('').semitones);
   answered = false;
+  $('#ear-answers', root).classList.remove('idle');
   for (const b of $('#ear-answers', root).children) {
     b.disabled = false;
     b.classList.remove('right', 'wrong');
@@ -208,8 +218,9 @@ function drawScore() {
 function drawStats() {
   const s = store.get(STATS, {})[kind];
   const box = $('#ear-stats', root);
+  $('#ear-reset', root).hidden = !s || !s.attempts;
   if (!s || !s.attempts) {
-    box.innerHTML = '<p class="muted">No answers recorded for this exercise yet.</p>';
+    box.innerHTML = '<div class="empty"><p>No answers recorded for this exercise yet.</p></div>';
     return;
   }
   const rows = Object.entries(s.items)
@@ -219,7 +230,7 @@ function drawStats() {
     .join('');
   box.innerHTML = `<p>All time: ${s.correct} of ${s.attempts} right (${percent(s.correct, s.attempts)}), best streak ${s.best}.</p>
     <table class="stats"><thead><tr><th scope="col">Answer</th><th scope="col">Right</th><th scope="col">Share</th></tr></thead>
-    <tbody>${rows}</tbody></table><p class="small muted">Weakest answers first.</p>`;
+    <tbody>${rows}</tbody></table><p class="hint">Weakest answers first.</p>`;
 }
 
 export function show() {}

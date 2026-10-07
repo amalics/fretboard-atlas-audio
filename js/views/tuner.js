@@ -108,6 +108,7 @@ function stop() {
   b.textContent = 'Start tuner';
   b.setAttribute('aria-pressed', 'false');
   $('#tu-note', root).textContent = '–';
+  $('#tu-note', root).classList.add('idle');
   $('#tu-cents', root).textContent = 'Not listening';
   $('#tu-cents', root).className = 'tu-cents';
   $('#tu-freq', root).textContent = '';
@@ -144,6 +145,7 @@ function loop(now) {
   const useString = Math.abs(s.cents) <= 300; // within three semitones of a string: tune towards it
   const cents = useString ? s.cents : note.cents;
   const inTune = Math.abs(cents) < 5;
+  $('#tu-note', root).classList.remove('idle');
   $('#tu-note', root).textContent = useString ? `${t.labels[s.index]}` : note.name.replace(/-?\d+$/, '');
   const label = $('#tu-cents', root);
   label.className = `tu-cents${inTune ? ' in-tune' : ''}`;

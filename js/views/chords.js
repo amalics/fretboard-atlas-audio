@@ -1,7 +1,7 @@
 // Chords: (a) look up the voicings of a chord as chord boxes, tap to strum; (b) build a shape and name it.
 import { chordBoxSVG, esc, fretboardSVG } from '../draw.js';
 import { strum } from '../synth.js';
-import { ROOT_LABELS, SHARP, identifyChord, intervalClass, mod12, parseNote, shapeMidi } from '../theory.js';
+import { ROOT_LABELS, SHARP, identifyChord, intervalClass, mod12, parseNote, shapeMidi, uniqueVoicings } from '../theory.js';
 import { $, MISSING, fillSelect, keyActivate, loadData, notice, store, tablist, tuningName } from '../util.js';
 import { typeLabel } from './fretboard.js';
 
@@ -88,9 +88,9 @@ function lookup() {
     $('#ch-more', root).hidden = true;
     return;
   }
-  $('#ch-title', root).textContent = `${entry.symbol} · ${entry.name}`;
+  $('#ch-title', root).innerHTML = `${esc(entry.symbol)} <span>· ${esc(entry.name)}</span>`;
   $('#ch-notes', root).textContent = `${entry.notes.join(' ')}  (${entry.formula.map((d) => d.replace('bb', '𝄫').replace('b', '♭').replace('#', '♯')).join(' ')})`;
-  voicings = entry.voicings || [];
+  voicings = uniqueVoicings(entry.voicings || []);
   shown = 0;
   if (!voicings.length) {
     notice(boxes, 'No playable voicing is listed for this chord.');
@@ -108,17 +108,18 @@ function addBoxes(n) {
     const v = voicings[i];
     const b = document.createElement('button');
     b.type = 'button';
-    b.className = 'boxbtn';
+    b.className = `boxbtn${v.standard ? ' standard' : ''}`;
     b.dataset.frets = JSON.stringify(v.frets);
-    b.setAttribute('aria-label', `Strum ${entry.symbol}, frets ${v.frets.map((f) => (f === null ? 'muted' : f)).join(', ')} from low to high`);
-    b.innerHTML = chordBoxSVG({ frets: v.frets, tuningMidi: standard, rootPc: entry.root_pc, notes: entry.notes })
-      + `<span class="frets">${esc(fretText(v.frets))}</span>${v.standard ? '<span class="tag">Standard</span>' : ''}`;
+    b.setAttribute('aria-label', `Strum ${entry.symbol}${v.standard ? ', standard shape' : ''}, frets ${v.frets.map((f) => (f === null ? 'muted' : f)).join(', ')} from low to high`);
+    b.innerHTML = (v.standard ? '<span class="badge" aria-hidden="true">Standard</span>' : '')
+      + chordBoxSVG({ frets: v.frets, tuningMidi: standard, rootPc: entry.root_pc, notes: entry.notes })
+      + `<span class="frets">${esc(fretText(v.frets))}</span>`;
     boxes.appendChild(b);
   }
   shown = end;
   const more = $('#ch-more', root);
   more.hidden = shown >= voicings.length;
-  more.textContent = `Show more voicings (${voicings.length - shown} left)`;
+  more.textContent = `Show more voicings (${voicings.length - shown} more)`;
 }
 
 function drawIdentify(focus) {
@@ -147,7 +148,7 @@ function drawIdentify(focus) {
   const sounding = shape.filter((f) => f !== null).length;
   const shapeLine = `<p class="shape">Shape (low to high): ${esc(fretText(shape))}</p>`;
   if (!sounding) {
-    out.innerHTML = '<p class="muted">No strings fretted yet.</p>';
+    out.innerHTML = '<div class="empty"><p>No strings fretted yet. Tap the fretboard above to build a shape.</p></div>';
     return;
   }
   const noteNames = res.pcs.map((pc) => SHARP[pc]).join(', ');

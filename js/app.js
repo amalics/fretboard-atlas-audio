@@ -2,7 +2,7 @@
 // #metronome, #tuner, #ear, #cards, #plan. The PDF links here, so two forms must keep working:
 //   #t-<n>   the ▶ track badges: open Tracks, scroll to track n, highlight it and focus its play button
 //   #ch-<n>  chapter openers (n = chapter number or appendix letter): Tracks filtered to that chapter
-import { $, $$ } from './util.js';
+import { $, $$, loadData } from './util.js';
 
 const VIEWS = {
   tracks: () => import('./views/tracks.js'),
@@ -43,7 +43,7 @@ async function route() {
     else a.removeAttribute('aria-current');
   }
   document.title = `${TITLES[view]} · Fretboard Atlas Companion`;
-  $(`.tabs a[data-view="${view}"]`)?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  revealTab();
 
   if (!loaded.has(view)) {
     loaded.set(view, VIEWS[view]().then(async (m) => {
@@ -84,5 +84,43 @@ themeBtn.addEventListener('click', () => {
 matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', themeLabel);
 themeLabel();
 
+// bring the current tab into view inside the strip without scrolling the page
+function revealTab() {
+  const tab = $('.tabs a[aria-current="page"]');
+  if (!tab) return;
+  const strip = tab.parentElement;
+  const l = tab.offsetLeft - strip.offsetLeft, r = l + tab.offsetWidth;
+  if (l < strip.scrollLeft + 16) strip.scrollLeft = l - 24;
+  else if (r > strip.scrollLeft + strip.clientWidth - 16) strip.scrollLeft = r - strip.clientWidth + 32;
+}
+
+// tab strip: fade the edge that has more tabs behind it (phones)
+const tabStrip = $('.tabs-inner');
+function tabFades() {
+  const nav = $('nav.tabs');
+  const max = tabStrip.scrollWidth - tabStrip.clientWidth;
+  nav.classList.toggle('fade-start', tabStrip.scrollLeft > 2);
+  nav.classList.toggle('fade-end', tabStrip.scrollLeft < max - 2);
+}
+tabStrip.addEventListener('scroll', tabFades, { passive: true });
+window.addEventListener('resize', tabFades);
+
+// edition facts for the home download button and the footer
+loadData('edition', { optional: true }).then((ed) => {
+  if (!ed) return;
+  if (ed.disclosure) $('#disclosure').textContent = ed.disclosure;
+  if (ed.licence_url) $('#licence-link').href = ed.licence_url;
+  if (ed.licence) $('#licence-link').textContent = ed.licence;
+  if (ed.pdf) {
+    const link = $('#download-link');
+    link.href = ed.pdf;
+    link.setAttribute('aria-describedby', 'download-meta');
+    $('#download-meta').textContent = ['PDF', ed.pdf_mb ? `${ed.pdf_mb} MB` : ''].filter(Boolean).join(', ')
+      + (ed.edition || ed.date ? ` · ${[ed.edition, ed.date].filter(Boolean).join(', ')}` : '');
+    $('#download').hidden = false;
+  }
+});
+
 window.addEventListener('hashchange', route);
-route();
+route().then(tabFades);
+document.fonts?.ready.then(() => { revealTab(); tabFades(); });

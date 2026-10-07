@@ -11,6 +11,15 @@ let root, list, tracks = [];
 let current = null; // { t, el }
 let chapter = null; // chapter filter from #ch-<n>, or null for all
 
+const ICON = {
+  play: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9.5-5.5z"/></svg>',
+  pause: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 2.5h3.2v11H3.5zM9.3 2.5h3.2v11H9.3z"/></svg>',
+};
+// track kinds from tracks.json, named as in the book
+const KIND = {
+  jam: 'practice loop', score: 'example', strum: 'strum pattern', earquiz: 'ear quiz', piece: 'piece',
+  picking: 'picking pattern', rhythm: 'rhythm', compas: 'compás',
+};
 const chapterLabel = (ch) => (/^\d+$/.test(String(ch)) ? `Chapter ${ch}` : ch === 'Intro' ? 'Introduction' : `Appendix ${ch}`);
 const rate = () => parseFloat($('#rate').value) || 1;
 const pressed = (b) => b.getAttribute('aria-pressed') === 'true';
@@ -56,19 +65,19 @@ function trackEl(t, label, chapterTitle) {
   el.className = 'track';
   el.id = `t-${t.number}`;
   el.dataset.chapter = String(t.chapter);
-  el.dataset.search = `${t.number} ${label} ${chapterTitle} ${t.title} ${t.kind}`.toLowerCase();
-  const kind = t.kind === 'jam' ? 'practice loop' : t.kind;
+  el.dataset.search = `${t.number} ${label} ${chapterTitle} ${t.title} ${t.label || KIND[t.kind] || t.kind}`.toLowerCase();
+  const kind = t.label || KIND[t.kind] || t.kind;
   const title = t.title || 'Example';
   const files = t.files || {};
   el.innerHTML = `
-    <button type="button" class="play" aria-label="Play track ${t.number}: ${esc(title)}" aria-pressed="false">▶</button>
+    <button type="button" class="play" aria-label="Play track ${t.number}: ${esc(title)}" aria-pressed="false">${ICON.play}</button>
     <div class="meta"><div class="num">Track ${t.number}</div>
       <div class="title">${esc(title)}</div>
-      <div class="kind">${t.loop ? '<b class="loopbadge">LOOP</b> ' : ''}${esc(kind)} · ${Math.round(t.tempo)} bpm</div></div>
+      <div class="kind">${esc(kind)} · ${Math.round(t.tempo)} bpm</div></div>
     <div class="opts">
-      ${files.slow ? `<button type="button" class="slow" aria-pressed="false" aria-label="Slow version of track ${t.number}">Slow</button>` : ''}
-      <button type="button" class="loop" aria-pressed="${t.loop ? 'true' : 'false'}" aria-label="Loop track ${t.number}">Loop</button>
-      ${files.midi ? `<a href="audio/${esc(files.midi)}" download aria-label="Download MIDI of track ${t.number}">MIDI</a>` : ''}
+      ${files.slow ? `<button type="button" class="btn sm toggle slow" aria-pressed="false" aria-label="Slow version of track ${t.number}">Slow</button>` : ''}
+      <button type="button" class="btn sm toggle loop" aria-pressed="${t.loop ? 'true' : 'false'}" aria-label="Loop track ${t.number}">Loop</button>
+      ${files.midi ? `<a class="btn sm" href="audio/${esc(files.midi)}" download aria-label="Download MIDI of track ${t.number}">MIDI</a>` : ''}
     </div>
     <div class="bar" aria-hidden="true"><i></i></div>`;
   $('.play', el).addEventListener('click', () => toggle(t, el));
@@ -128,7 +137,7 @@ function play(t, el, fraction = 0) {
 
 function setPlayingUI(el, on) {
   const b = $('.play', el);
-  b.textContent = on ? '❚❚' : '▶';
+  b.innerHTML = on ? ICON.pause : ICON.play;
   b.setAttribute('aria-pressed', String(on));
   b.setAttribute('aria-label', `${on ? 'Pause' : 'Play'} track ${b.getAttribute('aria-label').replace(/^(Play|Pause) track /, '')}`);
 }
@@ -166,6 +175,7 @@ audio.addEventListener('error', () => { if (current && audio.src) showError(curr
 // the dock: now playing and the shared speed control
 let visible = false;
 function setupDock() {
+  window.addEventListener('resize', updateDock);
   const r = $('#rate');
   r.addEventListener('input', () => {
     audio.playbackRate = rate();
@@ -181,12 +191,14 @@ function setupDock() {
 function updateDock() {
   const dock = $('#dock');
   dock.hidden = !((visible && tracks.length) || (current && !audio.paused));
+  // keep the page end (footer) clear of the fixed dock
+  document.body.style.setProperty('--dock-h', dock.hidden ? '0px' : `${dock.offsetHeight}px`);
   const has = Boolean(current);
   $('#dock-play').hidden = !has;
   $('#dock-num').textContent = has ? `Track ${current.t.number}` : '';
   $('#dock-title').textContent = has ? current.t.title || '' : 'Choose a track to play';
   const playing = has && !audio.paused;
-  $('#dock-play').textContent = playing ? '❚❚' : '▶';
+  $('#dock-play').innerHTML = playing ? ICON.pause : ICON.play;
   $('#dock-play').setAttribute('aria-label', playing ? 'Pause' : 'Play');
 }
 
@@ -201,6 +213,7 @@ function setChapter(ch) {
   chapter = ch;
   const bar = $('#chapter-bar', root);
   bar.hidden = ch === null;
+  list.classList.toggle('filtered', ch !== null);
   $('#track-missing', root)?.remove();
   if (ch !== null) {
     const mine = tracks.filter((t) => String(t.chapter) === ch);

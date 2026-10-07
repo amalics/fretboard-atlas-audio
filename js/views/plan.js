@@ -29,7 +29,7 @@ export async function init(section) {
     const t = ticks();
     if (box.checked) t[box.dataset.week] = new Date().toISOString().slice(0, 10);
     else delete t[box.dataset.week];
-    if (!store.set(KEY, t)) msg('Your browser is not saving data, so ticks will be lost when you close the page. Export your progress to keep it.');
+    if (!store.set(KEY, t)) msg('Your browser is not saving data, so ticks will be lost when you close the page. Export your progress to keep it.', true);
     box.closest('.week').classList.toggle('done', box.checked);
     drawProgress();
   });
@@ -40,8 +40,11 @@ export async function init(section) {
 
 const currentPlan = () => $('input[name=plan]:checked', root)?.value || 'A';
 
-function msg(text) {
-  $('#plan-msg', root).textContent = text;
+function msg(text, error = false) {
+  const m = $('#plan-msg', root);
+  m.textContent = text;
+  m.hidden = !text;
+  m.classList.toggle('error', error);
 }
 
 function meter(done, total, label) {
@@ -64,13 +67,13 @@ function draw() {
   for (const [q, weeks] of quarters) {
     const w0 = weeks[0];
     html += `<section class="quarter" aria-labelledby="q-${plan}-${q}">
-      <h2 id="q-${plan}-${q}">Quarter ${q} <span>· weeks ${weeks[0].week} to ${weeks[weeks.length - 1].week}: ${esc(w0.quarter_title)}</span></h2>
+      <h2 id="q-${plan}-${q}">Quarter ${q} <span>· weeks ${weeks[0].week} to ${weeks[weeks.length - 1].week} · ${esc(w0.quarter_title)}</span></h2>
       ${w0.goal ? `<p class="goal">Goal: ${inlineMd(w0.goal)}</p>` : ''}
       <div class="q-progress" data-quarter="${q}"></div>`;
     for (const r of weeks) {
       const done = Boolean(t[id(r)]);
       html += `<article class="week${done ? ' done' : ''}">
-        <div class="wcheck"><input type="checkbox" id="wk-${id(r)}" data-week="${id(r)}"${done ? ' checked' : ''}></div>
+        <div class="wcheck"><label><input type="checkbox" id="wk-${id(r)}" data-week="${id(r)}"${done ? ' checked' : ''}></label></div>
         <label class="wk" for="wk-${id(r)}"><span class="num">Week ${r.week}</span> ${inlineMd(r.focus)}</label>
         <dl><dt>Do this week</dt><dd>${inlineMd(r.do)}</dd><dt>Ear</dt><dd>${inlineMd(r.ear)}</dd>
         <dt>Milestone</dt><dd>${inlineMd(r.milestone)}</dd></dl></article>`;
@@ -132,7 +135,7 @@ async function importTicks(e) {
     msg(`Imported ${Object.keys(clean).length} ticked weeks${cardCount ? ` and ${cardCount} flashcard records` : ''}. `
       + 'Progress already in this browser was kept; for each flashcard the more recent review wins.');
   } catch {
-    msg('That file is not a progress export from this site, so nothing was changed.');
+    msg('That file is not a progress export from this site, so nothing was changed.', true);
   }
 }
 
