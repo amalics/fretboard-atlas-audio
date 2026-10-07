@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fretboard Atlas Companion</title>
+<meta name="description" content="Audio tracks, fretboard, chords, metronome, tuner, ear trainer and year plan for The Fretboard Atlas.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23a54921'/%3E%3Cpath d='M9 8v16M15 8v16M21 8v16M27 8v16' stroke='%23fbf6ee' stroke-width='1.5'/%3E%3Ccircle cx='15' cy='16' r='3' fill='%23fbf6ee'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<script>
+  // apply a saved theme before first paint
+  try { const t = localStorage.getItem('atlas.theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch (e) {}
+</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site">
+  <div class="wrap head">
+    <div>
+      <div class="kicker">The Fretboard Atlas · v2</div>
+      <p class="brand">Companion</p>
+    </div>
+    <button type="button" id="theme" class="btn ghost" aria-label="Switch colour theme">Theme</button>
+  </div>
+  <nav class="tabs" aria-label="Sections">
+    <div class="wrap tabs-inner">
+      <a href="#tracks" data-view="tracks">Tracks</a>
+      <a href="#fretboard" data-view="fretboard">Fretboard</a>
+      <a href="#chords" data-view="chords">Chords</a>
+      <a href="#metronome" data-view="metronome">Metronome</a>
+      <a href="#tuner" data-view="tuner">Tuner</a>
+      <a href="#ear" data-view="ear">Ear trainer</a>
+      <a href="#cards" data-view="cards">Flashcards</a>
+      <a href="#plan" data-view="plan">Year plan</a>
+    </div>
+  </nav>
+</header>
+
+<main id="main" class="wrap" tabindex="-1">
+  <noscript><p class="notice">This companion needs JavaScript.</p></noscript>
+  <p class="intro" id="intro">The web companion to <em>The Fretboard Atlas</em>: play every audio example from the book here, or use the tabs above for the fretboard, chords, metronome, tuner, ear trainer, flashcards and year plan.</p>
+
+  <section id="view-tracks" class="view" aria-labelledby="h-tracks" hidden>
+    <h1 id="h-tracks">Audio tracks</h1>
+    <p class="lead">Every ▶ example in the book. Slow versions play at 60 % with a one-bar count-in; practice loops repeat until you stop them (their slow version is 75 %).</p>
+    <div class="chapter-bar" id="chapter-bar" hidden>
+      <h2 id="chapter-head" tabindex="-1"></h2>
+      <button type="button" class="btn" id="chapter-all">Show all chapters</button>
+    </div>
+    <div class="toolbar">
+      <label class="grow"><span class="sr">Search tracks</span>
+        <input type="search" id="track-q" placeholder="Search by number, chapter or title" autocomplete="off"></label>
+      <span id="track-count" class="muted small" aria-live="polite"></span>
+    </div>
+    <div id="track-list"></div>
+  </section>
+
+  <section id="view-fretboard" class="view" aria-labelledby="h-fretboard" hidden>
+    <h1 id="h-fretboard">Fretboard</h1>
+    <p class="lead">Any scale or chord on the neck, in any tuning. Roots are in rust. Tap a dot to hear it.</p>
+    <form class="controls" id="fb-form" onsubmit="return false">
+      <label>Tuning <select id="fb-tuning"></select></label>
+      <label>Root <select id="fb-root"></select></label>
+      <fieldset class="seg" aria-label="Show">
+        <label><input type="radio" name="fb-kind" value="scale" checked> Scale</label>
+        <label><input type="radio" name="fb-kind" value="chord"> Chord</label>
+      </fieldset>
+      <label id="fb-scale-wrap">Scale <select id="fb-scale"></select></label>
+      <label id="fb-chord-wrap" hidden>Chord <select id="fb-chord"></select></label>
+      <label>Labels <select id="fb-labels">
+        <option value="names">Note names</option><option value="degrees">Degrees</option><option value="none">None</option>
+      </select></label>
+    </form>
+    <div class="fb-head"><h2 id="fb-title"></h2><p id="fb-notes" class="muted"></p></div>
+    <div class="scroller" id="fb-board" tabindex="0" aria-label="Fretboard diagram, scrolls sideways"></div>
+    <p id="fb-info" class="small muted"></p>
+  </section>
+
+  <section id="view-chords" class="view" aria-labelledby="h-chords" hidden>
+    <h1 id="h-chords">Chords</h1>
+    <p class="lead">Look up the voicings of any chord, or build a shape and let the app name it.</p>
+    <div class="subtabs" role="tablist" aria-label="Chord tools">
+      <button type="button" role="tab" id="ct-lookup" aria-controls="cp-lookup" aria-selected="true">Look up</button>
+      <button type="button" role="tab" id="ct-identify" aria-controls="cp-identify" aria-selected="false" tabindex="-1">Identify</button>
+    </div>
+    <div id="cp-lookup" role="tabpanel" aria-labelledby="ct-lookup">
+      <form class="controls" onsubmit="return false">
+        <label>Root <select id="ch-root"></select></label>
+        <label>Type <select id="ch-type"></select></label>
+      </form>
+      <div class="chord-head"><h2 id="ch-title"></h2><p id="ch-notes" class="muted"></p></div>
+      <p class="small muted">Tap a diagram to strum it. Standard shapes come first.</p>
+      <div id="ch-boxes" class="boxes"></div>
+      <p><button type="button" id="ch-more" class="btn" hidden>Show more voicings</button></p>
+    </div>
+    <div id="cp-identify" role="tabpanel" aria-labelledby="ct-identify" hidden>
+      <form class="controls" onsubmit="return false">
+        <label>Tuning <select id="id-tuning"></select></label>
+        <button type="button" class="btn" id="id-play">Strum</button>
+        <button type="button" class="btn ghost" id="id-clear">Clear</button>
+      </form>
+      <p class="small muted">Tap a fret on each string to build a shape. Tap the same fret again to mute that string. Strings start muted.</p>
+      <div class="scroller" id="id-board"></div>
+      <div id="id-result" class="result" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <section id="view-metronome" class="view" aria-labelledby="h-metronome" hidden>
+    <h1 id="h-metronome">Metronome</h1>
+    <p class="lead">Sample-accurate clicks with an accent on beat 1. Tap the tempo to set it from a song.</p>
+    <div class="metro">
+      <div class="bpm-row">
+        <button type="button" class="btn round" id="m-down" aria-label="Slower by 1 bpm">−</button>
+        <output id="m-bpm-out" for="m-bpm" class="bpm" aria-live="off">90</output>
+        <button type="button" class="btn round" id="m-up" aria-label="Faster by 1 bpm">+</button>
+      </div>
+      <label class="block">Tempo <span class="muted">(30 to 250 bpm)</span>
+        <input type="range" id="m-bpm" min="30" max="250" step="1" value="90"></label>
+      <div class="controls">
+        <label>Beats per bar <select id="m-beats"></select></label>
+        <label>Subdivision <select id="m-sub">
+          <option value="1">None</option><option value="2">Eighths (2)</option><option value="3">Triplets (3)</option><option value="4">Sixteenths (4)</option>
+        </select></label>
+        <label class="check"><input type="checkbox" id="m-accent" checked> Accent beat 1</label>
+      </div>
+      <div class="beats" id="m-beats-vis" aria-hidden="true"></div>
+      <div class="controls">
+        <button type="button" class="btn primary big" id="m-start" aria-pressed="false">Start</button>
+        <button type="button" class="btn big" id="m-tap">Tap tempo</button>
+      </div>
+      <p class="small muted" id="m-status" aria-live="polite"></p>
+    </div>
+  </section>
+
+  <section id="view-tuner" class="view" aria-labelledby="h-tuner" hidden>
+    <h1 id="h-tuner">Tuner</h1>
+    <p class="lead">Play one string at a time. The needle shows how far you are from the nearest string of the tuning.</p>
+    <p class="small muted">The tuner uses your microphone. Browsers allow that only on secure pages (HTTPS or localhost). Nothing is recorded or sent anywhere.</p>
+    <form class="controls" onsubmit="return false">
+      <label>Tuning <select id="tu-tuning"></select></label>
+      <button type="button" class="btn primary" id="tu-start" aria-pressed="false">Start tuner</button>
+    </form>
+    <div class="tuner">
+      <svg id="tu-gauge" viewBox="0 0 300 170" role="img" aria-labelledby="tu-readout">
+        <path class="gauge-arc" d="M30 150 A120 120 0 0 1 270 150" fill="none"/>
+        <g id="tu-ticks"></g>
+        <line id="tu-needle" class="needle" x1="150" y1="150" x2="150" y2="42"/>
+        <circle class="needle-hub" cx="150" cy="150" r="6"/>
+      </svg>
+      <div id="tu-readout" class="readout" aria-live="polite">
+        <div class="tu-note" id="tu-note">–</div>
+        <div class="tu-cents" id="tu-cents">Not listening</div>
+        <div class="tu-freq small muted" id="tu-freq"></div>
+      </div>
+      <div class="strings" id="tu-strings"></div>
+      <p id="tu-msg" class="notice" hidden></p>
+    </div>
+  </section>
+
+  <section id="view-ear" class="view" aria-labelledby="h-ear" hidden>
+    <h1 id="h-ear">Ear trainer</h1>
+    <p class="lead">Short quizzes played by the built-in synth. Your scores stay in this browser.</p>
+    <div class="subtabs" role="tablist" aria-label="Exercises">
+      <button type="button" role="tab" id="et-interval" aria-controls="ear-panel" aria-selected="true">Intervals</button>
+      <button type="button" role="tab" id="et-chord" aria-controls="ear-panel" aria-selected="false" tabindex="-1">Chord qualities</button>
+      <button type="button" role="tab" id="et-degree" aria-controls="ear-panel" aria-selected="false" tabindex="-1">Scale degrees</button>
+    </div>
+    <div id="ear-panel" role="tabpanel">
+      <details class="settings" id="ear-settings" open>
+        <summary>Settings</summary>
+        <div id="ear-options"></div>
+      </details>
+      <div class="quiz">
+        <div class="controls">
+          <button type="button" class="btn primary big" id="ear-play">Play question</button>
+          <button type="button" class="btn big" id="ear-replay" disabled>Play again</button>
+        </div>
+        <p id="ear-prompt" class="prompt"></p>
+        <div id="ear-answers" class="answers"></div>
+        <p id="ear-feedback" class="feedback" aria-live="assertive"></p>
+        <div class="scoreline" aria-live="polite">
+          <span>Score <b id="ear-score">0 / 0</b></span>
+          <span>Streak <b id="ear-streak">0</b></span>
+          <span>Best <b id="ear-best">0</b></span>
+        </div>
+      </div>
+      <h2>Your record</h2>
+      <div id="ear-stats"></div>
+      <p><button type="button" class="btn ghost" id="ear-reset">Reset this exercise's record</button></p>
+    </div>
+  </section>
+
+  <section id="view-cards" class="view" aria-labelledby="h-cards" hidden>
+    <h1 id="h-cards">Flashcards</h1>
+    <p class="lead">The book's chapter flashcards with spaced repetition. A card you know moves up a box and comes back later; a card you miss goes back to box 1.</p>
+    <details class="settings" id="fc-chapters">
+      <summary>Chapters: <span id="fc-chapter-summary">All chapters</span></summary>
+      <div class="optrow"><button type="button" class="linkbtn" data-select="all">Select all</button>
+        <button type="button" class="linkbtn" data-select="none">Clear</button></div>
+      <fieldset class="plain"><legend class="sr">Chapters to review</legend><div id="fc-chapter-list" class="fc-chapters"></div></fieldset>
+    </details>
+    <p id="fc-due" aria-live="polite"></p>
+    <div class="fc-boxes" id="fc-boxes" aria-label="Cards per box"></div>
+    <div id="fc-body">
+      <article class="fc-card" id="fc-card" hidden aria-live="polite">
+        <p class="small muted" id="fc-meta"></p>
+        <div class="fc-front" id="fc-front"></div>
+        <div class="fc-back" id="fc-back" hidden></div>
+      </article>
+      <div class="controls">
+        <button type="button" class="btn primary big" id="fc-reveal" hidden>Show answer <span class="kbd" aria-hidden="true">Space</span></button>
+        <span id="fc-answer-buttons" class="fc-answers" hidden>
+          <button type="button" class="btn big fc-knew" id="fc-knew" aria-keyshortcuts="K">Knew it <span class="kbd" aria-hidden="true">K</span></button>
+          <button type="button" class="btn big fc-missed" id="fc-missed" aria-keyshortcuts="M">Missed it <span class="kbd" aria-hidden="true">M</span></button>
+        </span>
+      </div>
+      <div id="fc-empty" hidden>
+        <p id="fc-empty-text"></p>
+        <button type="button" class="btn" id="fc-extra">Review all selected cards now</button>
+      </div>
+      <p class="small muted">Keys: Space shows the answer, K means you knew it, M means you missed it. Progress is saved in this browser and included in the year-plan export.</p>
+    </div>
+  </section>
+
+  <section id="view-plan" class="view" aria-labelledby="h-plan" hidden>
+    <h1 id="h-plan">Year plan</h1>
+    <p class="lead">The week tables from the 52-week plan appendix. Tick a week when you meet its milestone. Ticks are saved in this browser.</p>
+    <div class="controls">
+      <fieldset class="seg" aria-label="Plan">
+        <label><input type="radio" name="plan" value="A" checked> Plan A</label>
+        <label><input type="radio" name="plan" value="B"> Plan B</label>
+      </fieldset>
+      <button type="button" class="btn" id="plan-export" aria-describedby="plan-export-note">Export progress</button>
+      <label class="btn" id="plan-import-label">Import progress <input type="file" id="plan-import" accept="application/json,.json" class="sr"></label>
+    </div>
+    <p id="plan-export-note" class="small muted">The export file holds your year-plan ticks and your flashcard progress, so you can move both to another device.</p>
+    <p id="plan-msg" class="small muted" aria-live="polite"></p>
+    <div id="plan-body"></div>
+  </section>
+</main>
+
+<div class="dock" id="dock" hidden>
+  <div class="wrap dock-inner">
+    <button type="button" class="play small" id="dock-play" aria-label="Pause">❚❚</button>
+    <div class="dock-meta"><span class="num" id="dock-num"></span> <span id="dock-title" class="dock-title"></span></div>
+    <label class="speed">Speed <input type="range" id="rate" min="0.5" max="1.25" step="0.05" value="1" aria-describedby="rateval"> <output id="rateval">100 %</output></label>
+  </div>
+</div>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
